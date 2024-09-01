@@ -32,7 +32,7 @@ services:
   elt_script:
     build:
       context: ./elt_script # Directory containing the Dockerfile and elt_script.py
-      dockerfile: Dockerfile # name of the Dockerfile to use for building the image
+      dockerfile: DockerFile # name of the Dockerfile to use for building the image
     command: ['python', 'elt_script.py']
     networks:
       - elt_network
