@@ -30,6 +30,7 @@ services:
       - POSTGRES_PASSWORD=postgres
 
   elt_script:
+    container_name: elt_script
     build:
       context: ./elt_script # Directory containing the Dockerfile and elt_script.py
       dockerfile: DockerFile # name of the Dockerfile to use for building the image
@@ -40,6 +41,27 @@ services:
       - source_postgres
       - destination_postgres
 
+  dbt:
+    container_name: dbt
+    image: ghcr.io/dbt-labs/dbt-postgres:1.8.2
+    command: 
+      [ 
+        'run', 
+        '--profiles-dir', '/root',
+        '--project-dir', '/dbt',
+      ]
+    networks:
+      - elt_network
+    volumes:
+      - ./dbt_project:/dbt 
+      - ~/.dbt:/root 
+    depends_on:
+      - elt_script
+    environment:
+      DBT_PROFILE: dbt_project # This should match the profile name in profiles.yml
+      DBT_TARGET: dev
+    extra_hosts:
+      - "host.docker.internal:host-gateway" # Required for dbt to connect to the source and destination databases
 networks:
   elt_network:
     driver: bridge
