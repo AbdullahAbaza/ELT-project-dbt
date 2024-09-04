@@ -1,16 +1,28 @@
 FROM python:3.9-slim-bookworm
 
-# Install PostgreSQL command-line tools
+# Install PostgreSQL command-line tools and other necessary utilities
 RUN apt-get update && \
-    apt-get install -y wget gnupg2 lsb-release && \
+    apt-get install -y --no-install-recommends wget gnupg2 lsb-release cron && \
     sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list' && \
     wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - && \
     apt-get update && \
-    apt-get install -y postgresql-client-16
+    apt-get install -y --no-install-recommends postgresql-client-16 && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
+# Set the working directory in the container
+WORKDIR /app
 
-# Copy the ELT script 
+# Copy the ELT script and the shell script to the container
 COPY elt_script.py .
+COPY start.sh .
 
-# Set the default command to run the ELT script
-CMD ["python3", "elt_script.py"]
+# Copy the cron job file and set permissions
+COPY cronjob /etc/cron.d/elt_cronjob
+RUN chmod 0644 /etc/cron.d/elt_cronjob && crontab /etc/cron.d/elt_cronjob
+
+# Ensure the start.sh script is executable
+RUN chmod +x /app/start.sh
+
+# Set the default command to run the start.sh script
+CMD ["/app/start.sh"]

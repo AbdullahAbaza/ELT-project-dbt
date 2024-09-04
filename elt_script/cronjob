@@ -1,0 +1,1 @@
+0 3 * * * root python /app/elt_script.py
