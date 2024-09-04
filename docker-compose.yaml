@@ -15,7 +15,7 @@ services:
 
     volumes:
       - ./source_db_init/init.sql:/docker-entrypoint-initdb.d/init.sql
-      - ./source_db_data:/var/lib/postgresql/data
+      - source_db_data:/var/lib/postgresql/data
 
   destination_postgres: 
     image: postgres:latest
@@ -34,7 +34,7 @@ services:
     build:
       context: ./elt_script # Directory containing the Dockerfile and elt_script.py
       dockerfile: DockerFile # name of the Dockerfile to use for building the image
-    command: ['python', 'elt_script.py']
+    command: ["./start.sh"]
     networks:
       - elt_network
     depends_on:
@@ -65,6 +65,9 @@ services:
 networks:
   elt_network:
     driver: bridge
+volumes: 
+  source_db_data: {}
+
 
 
   
