@@ -4,19 +4,18 @@ WITH films_with_ratings AS (
         title,
         release_date,
         price,
-        rating,
-        user_rating
+        rating,  -- Ensure this comma is present
+        user_rating,
         CASE 
-            WHEN user_rating >= 4.5 THEN "Excellent"
-            WHEN user_rating >= 3.5 THEN "Good"
-            WHEN user_rating >= 2.5 THEN "Average"
-            ELSE "Poor"
-            END AS rating_category
+            WHEN user_rating >= 4.5 THEN 'Excellent'
+            WHEN user_rating >= 3.5 THEN 'Good'
+            WHEN user_rating >= 2.5 THEN 'Average'
+            ELSE 'Poor'
+        END AS rating_category
     FROM {{ ref('films') }}
-),
+), -- this comma , seperates the CTEs from each other 
 
-
-WITH films_with_actors AS (
+films_with_actors AS (
     SELECT
         f.film_id,
         f.title,
@@ -28,9 +27,8 @@ WITH films_with_actors AS (
     GROUP BY f.film_id, f.title
 )
 
-
 SELECT
     fwr.*,
     fwa.actors
-FROM file_with_ratings AS fwr
+FROM films_with_ratings AS fwr
 JOIN films_with_actors AS fwa ON fwr.film_id = fwa.film_id
