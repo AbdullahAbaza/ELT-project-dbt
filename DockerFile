@@ -1,7 +1,13 @@
 # Using Official airfloe image as base image
 FROM apache/airflow:latest
 
+USER airflow
 
 # Installing the Docker provider for airflow
 
-RUN pip install apache-airflow-providers-docker
+RUN pip install apache-airflow-providers-docker \
+    && pip install apache-airflow-providers-http \
+    && pip install apache-airflow-providers-airbyte
+
+
+USER root

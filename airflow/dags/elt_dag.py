@@ -1,14 +1,19 @@
 from datetime import datetime
 from airflow import DAG
 from docker.types import Mount
-
-from airflow.operators.python import PythonOperator
+from airflow.utils.dates import days_ago
 
 from airflow.providers.docker.operators.docker import DockerOperator
+from airflow.providers.airbyte.operators.airbyte import AirbyteTriggerSyncOperator
+# from airflow.operators.python import PythonOperator
 import subprocess
 
 
 
+# with in airbyte we have a connection id and a workspace id , and they are ident for our instance of airbyte
+CONN_ID = ""
+
+# The default arguments for the DAG
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
@@ -16,16 +21,16 @@ default_args = {
     'email_on_retry':False
 }
 
-def run_elt_script():
-    script_path = "/opt/airflow/elt_script/elt_script.py"
-    result = subprocess.run(
-        ["python", script_path], capture_output=True, text=True
-    )
+# def run_elt_script():
+#     script_path = "/opt/airflow/elt_script/elt_script.py"
+#     result = subprocess.run(
+#         ["python", script_path], capture_output=True, text=True
+#     )
     
-    if result.returncode != 0:
-        raise Exception(f"Script failed with error: {result.stderr}")
-    else:
-        print(result.stdout)
+#     if result.returncode != 0:
+#         raise Exception(f"Script failed with error: {result.stderr}")
+#     else:
+#         print(result.stdout)
 
 
 with DAG(
@@ -37,9 +42,13 @@ with DAG(
     schedule_interval= '@daily'
 ) as dag:
     
-    t1 = PythonOperator(
-        task_id='run_elt_script',
-        python_callable=run_elt_script,
+    t1 = AirbyteTriggerSyncOperator(
+        task_id='airbyte_postgres_postgres_sync',
+        airbyte_conn_id='airbyte',
+        connection_id=CONN_ID,
+        asynchronous=False,
+        timeout=3600,
+        wait_seconds=3,
         dag=dag
         
     ),
