@@ -33,41 +33,6 @@ services:
     # volumes:
     #   - destination_db_data:/var/lib/postgresql/data
     
-# [elt_script] is a custom image that contains the Python script that will extract data from the source database, load it into the destination database, and run dbt to transform the data.
-  # elt_script:
-  #   container_name: elt_script
-  #   build:
-  #     context: ./elt_script # Directory containing the Dockerfile and elt_script.py
-  #     dockerfile: DockerFile # name of the Dockerfile to use for building the image
-  #   command: ["./start.sh"]
-  #   networks:
-  #     - elt_network
-  #   depends_on:
-  #     - source_postgres
-  #     - destination_postgres
-
-# [dbt] is a dbt image that will run the dbt transformation on the data loaded into the destination database.
-  # dbt:
-  #   container_name: dbt
-  #   image: ghcr.io/dbt-labs/dbt-postgres:1.8.2
-  #   command: 
-  #     [ 
-  #       'run', 
-  #       '--profiles-dir', '/root',
-  #       '--project-dir', '/dbt',
-  #     ]
-  #   networks:
-  #     - elt_network
-  #   volumes:
-  #     - ./dbt_project:/dbt 
-  #     - ~/.dbt:/root 
-  #   depends_on:
-  #     - elt_script
-  #   environment:
-  #     DBT_PROFILE: dbt_project # This should match the profile name in profiles.yml
-  #     DBT_TARGET: dev
-  #   extra_hosts:
-  #     - "host.docker.internal:host-gateway" # Required for dbt to connect to the source and destination databases
 
 # [airflow-postgres] is a PostgreSQL database that will be used by Apache Airflow to store metadata and task execution logs.
   airflow-postgres:
@@ -105,7 +70,6 @@ services:
     build:
       context: .
       dockerfile: DockerFile
-    user: root
     container_name: airflow-webserver
     depends_on:
       - airflow-init
@@ -119,17 +83,20 @@ services:
       - ./dbt_project:/opt/dbt
       - ~/.dbt:/root/.dbt
       - /var/run/docker.sock:/var/run/docker.sock
+    env_file:
+      - .env
     environment:
       - LOAD_EX=n
       - EXECUTOR=Local
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@airflow-postgres/airflow
       - AIRFLOW_CONN_DESTINATION_DB=postgresql+psycopg2://postgres:postgres@destination_postgres:5434/destination_db
-      - AIRFLOW__CORE__FERNET_KEY=PyghQJewKcp8LYsVW3cuEiXymn4H1SS9EQnWdKfqsIk=
       - AIRFLOW__WEBSERVER__DEFAULT_USER_USERNAME=airflow
       - AIRFLOW__WEBSERVER__DEFAULT_USER_PASSWORD=airflow
       - AIRFLOW__WEBSERVER__SECRET_KEY=secret
       - AIRFLOW_WWW_USER_USERNAME=airflow
       - AIRFLOW_WWW_USER_PASSWORD=airflow
+      - AIRFLOW__CORE__FERNET_KEY=${AIRFLOW__CORE__FERNET_KEY}
+
     ports:
       - 8080:8080
     command: webserver
@@ -144,7 +111,6 @@ services:
     build:
       context: .
       dockerfile: DockerFile
-    user: root
     container_name: airflow-scheduler
     depends_on:
       - airflow-init
@@ -158,16 +124,20 @@ services:
       - ./dbt_project:/opt/dbt
       - ~/.dbt:/root/.dbt
       - /var/run/docker.sock:/var/run/docker.sock
+    env_file:
+      - .env
     environment:
       - LOAD_EX=n
       - EXCUTOR=Local
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@airflow-postgres/airflow
       - AIRFLOW_CONN_DESTINATION_DB=postgresql+psycopg2://postgres:postgres@destination_postgres:5434/destination_db
-      - AIRFLOW__CORE__FERNET_KEY=PyghQJewKcp8LYsVW3cuEiXymn4H1SS9EQnWdKfqsIk=
       - AIRFLOW__WEBSERVER__SECRET_KEY=secret
       - AIRFLOW_WWW_USER_USERNAME=airflow
       - AIRFLOW_WWW_USER_PASSWORD=airflow
+      - AIRFLOW__CORE__FERNET_KEY=${AIRFLOW__CORE__FERNET_KEY}
+
     command: scheduler
+
 
 
 
