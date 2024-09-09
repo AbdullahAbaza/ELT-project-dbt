@@ -1,7 +1,7 @@
-docker compose down -v
+docker compose down
 
 sleep 5
 
-cd /airbyte
+cd airbyte/
 
 docker compose down

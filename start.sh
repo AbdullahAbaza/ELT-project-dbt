@@ -1,11 +1,11 @@
-docker compose up aitflow-postgres
+docker compose up airflow-postgres -d
 sleep 5
-docker compose up aitflow-init
+docker compose up airflow-init
 sleep 10
 docker compose up -d
 sleep 5
 
-cd /airbyte
+cd airbyte/
 
 if [ -f "docker-compose.yaml" ]; then
     docker compose up -d
