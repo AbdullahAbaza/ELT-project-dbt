@@ -5,13 +5,13 @@ from airflow.utils.dates import days_ago
 
 from airflow.providers.docker.operators.docker import DockerOperator
 from airflow.providers.airbyte.operators.airbyte import AirbyteTriggerSyncOperator
-# from airflow.operators.python import PythonOperator
-import subprocess
+
 
 
 
 # with in airbyte we have a connection id and a workspace id , and they are ident for our instance of airbyte
-CONN_ID = ""
+# Replace this string with the ID generated from your Airbyte instance
+CONN_ID = 'd690b30a-8d80-4564-b41d-8306be7cc68c'
 
 # The default arguments for the DAG
 default_args = {
@@ -21,23 +21,11 @@ default_args = {
     'email_on_retry':False
 }
 
-# def run_elt_script():
-#     script_path = "/opt/airflow/elt_script/elt_script.py"
-#     result = subprocess.run(
-#         ["python", script_path], capture_output=True, text=True
-#     )
-    
-#     if result.returncode != 0:
-#         raise Exception(f"Script failed with error: {result.stderr}")
-#     else:
-#         print(result.stdout)
-
-
 with DAG(
     dag_id= 'elt_using_dbt',
     description= 'An ELT workflow with dbt',
     default_args= default_args,
-    start_date= datetime(2024, 9, 8),
+    start_date= days_ago(1),
     catchup= False,
     schedule_interval= '@daily'
 ) as dag:
@@ -51,7 +39,7 @@ with DAG(
         wait_seconds=3,
         dag=dag
         
-    ),
+    )
     
     t2 = DockerOperator(
         task_id='dbt_run',
@@ -70,8 +58,10 @@ with DAG(
         docker_url='unix://var/run/docker.sock',
         network_mode='bridge',
         mounts=[
-            Mount(source='/home/centos/ELT-project-dbt/dbt_project', target='/opt/dbt', type='bind'),
-            Mount(source='/home/centos/.dbt', target='/root', type='bind')
+            # Dynamic mount for dbt project
+            Mount(source='/home/bazoo/ELT-project-dbt/dbt_project', target='/opt/dbt', type='bind'),
+            # Dynamic mount for the .dbt folder
+            Mount(source='/home/bazoo/.dbt', target='/root', type='bind')
         ],
         mount_tmp_dir=False,  # Disable temp directory mounting
         extra_hosts={
